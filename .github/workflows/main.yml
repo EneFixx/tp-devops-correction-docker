@@ -1,0 +1,32 @@
+# Fichier : .github/workflows/main.yml
+name: CI devops 2025
+
+on:
+  # Lance la CI a chaque push sur main et develop
+  push:
+    branches:
+      - main
+      - develop
+  # Et a chaque pull request
+  pull_request:
+
+jobs:
+  test-backend:
+    # Machine virtuelle Ubuntu fournie par GitHub
+    runs-on: ubuntu-24.04
+    steps:
+      # Recupere le code du repo dans la machine
+      - uses: actions/checkout@v4
+
+      # Installe le JDK 21 (meme version que le pom.xml)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Compile, lance les tests unitaires et les tests d'integration
+      # (testcontainers demarre un Postgres dans Docker pendant les tests)
+      - name: Build and test with Maven
+        run: mvn clean verify --file ./simple-api/pom.xml
