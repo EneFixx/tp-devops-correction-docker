@@ -67,6 +67,14 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
           push: ${{ github.ref == 'refs/heads/main' }}
 
+      # Construit et publie l'image du front
+      - name: Build image and push front
+        uses: docker/build-push-action@v6
+        with:
+          context: ./front
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
+
   deploy:
     # Ne se lance qu'apres la publication des images, et seulement sur main
     needs: build-and-push-docker-image

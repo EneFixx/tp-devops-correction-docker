@@ -1,0 +1,11 @@
+- name: Run front
+  community.docker.docker_container:
+    name: front
+    image: enefixx/tp-devops-front:latest
+    pull: true
+    state: started
+    restart_policy: always
+    networks:
+      - name: my-network
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python
