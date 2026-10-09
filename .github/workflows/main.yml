@@ -69,3 +69,18 @@ jobs:
           context: ./http-server
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
           push: ${{ github.ref == 'refs/heads/main' }}
+
+  deploy:
+    # Ne se lance qu'apres la publication des images, et seulement sur main
+    needs: build-and-push-docker-image
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installe Python puis Ansible sur la machine de GitHub
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name:
