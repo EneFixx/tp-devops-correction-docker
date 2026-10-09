@@ -1,0 +1,9 @@
+all:
+  vars:
+    ansible_user: admin
+    ansible_ssh_private_key_file: /Users/armandlabernardiere/Desktop/EFREI/S7/id_rsa
+    ansible_python_interpreter: /usr/bin/python3
+  children:
+    prod:
+      hosts:
+        armand.labernardiere.takima.school:
