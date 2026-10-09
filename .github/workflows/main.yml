@@ -1,4 +1,3 @@
-# Fichier : .github/workflows/main.yml
 name: CI devops 2025
 
 on:
@@ -27,7 +26,6 @@ jobs:
           cache: maven
 
       # Compile, lance les tests unitaires et les tests d'integration
-      # (testcontainers demarre un Postgres dans Docker pendant les tests)
       - name: Build and test with Maven
         run: mvn clean verify --file ./simple-api/pom.xml
 
@@ -51,7 +49,6 @@ jobs:
         with:
           context: ./simple-api
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
-          # On ne publie que depuis main
           push: ${{ github.ref == 'refs/heads/main' }}
 
       # Construit et publie l'image de la base de donnees
@@ -83,4 +80,19 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name:
+      - name: Install Ansible
+        run: pip install ansible
+
+      # Recree la cle SSH a partir du secret
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      # Lance le playbook sur le serveur
+      - name: Run Ansible playbook
+        working-directory: ./ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: ansible-playbook -i inventories/setup.yml playbook.yml -e ansible_ssh_private_key_file=$HOME/.ssh/id_rsa
