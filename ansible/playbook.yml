@@ -2,5 +2,12 @@
   gather_facts: true
   become: true
 
+  vars:
+    db_password: pwd
+
   roles:
     - docker
+    - network
+    - database
+    - app
+    - proxy

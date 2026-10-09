@@ -1,0 +1,13 @@
+- name: Run HTTPD
+  community.docker.docker_container:
+    name: httpd
+    image: enefixx/tp-devops-httpd:latest
+    pull: true
+    state: started
+    restart_policy: always
+    ports:
+      - "80:80"
+    networks:
+      - name: my-network
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python

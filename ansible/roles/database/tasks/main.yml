@@ -1,0 +1,15 @@
+- name: Run database
+  community.docker.docker_container:
+    name: database
+    image: enefixx/tp-devops-database:latest
+    pull: true
+    state: started
+    restart_policy: always
+    env:
+      POSTGRES_PASSWORD: "{{ db_password }}"
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    networks:
+      - name: my-network
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python

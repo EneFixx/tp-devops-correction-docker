@@ -1,0 +1,14 @@
+- name: Run backend API
+  community.docker.docker_container:
+    name: simple-api
+    image: enefixx/tp-devops-simple-api:latest
+    pull: true
+    state: started
+    restart_policy: always
+    env:
+      DATABASE_HOST: database
+      DATABASE_PASSWORD: "{{ db_password }}"
+    networks:
+      - name: my-network
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python
