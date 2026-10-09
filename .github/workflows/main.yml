@@ -30,3 +30,42 @@ jobs:
       # (testcontainers demarre un Postgres dans Docker pendant les tests)
       - name: Build and test with Maven
         run: mvn clean verify --file ./simple-api/pom.xml
+
+  build-and-push-docker-image:
+    # Ne se lance que si les tests du backend sont passes
+    needs: test-backend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Connexion a Docker Hub avec les secrets du repo
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Construit et publie l'image du backend
+      - name: Build image and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./simple-api
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+          # On ne publie que depuis main
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Construit et publie l'image de la base de donnees
+      - name: Build image and push database
+        uses: docker/build-push-action@v6
+        with:
+          context: ./database
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Construit et publie l'image du serveur Apache
+      - name: Build image and push httpd
+        uses: docker/build-push-action@v6
+        with:
+          context: ./http-server
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
