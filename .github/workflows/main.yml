@@ -38,7 +38,7 @@ jobs:
       # Le token est lu depuis le secret SONAR_TOKEN pour ne pas l'écrire en clair
       - name: SonarCloud analysis
         run: >
-          mvn -B verify sonar:sonar
+          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
           -Dsonar.projectKey=EneFixx_tp-devops-correction-docker
           -Dsonar.organization=enefixx
           -Dsonar.host.url=https://sonarcloud.io
