@@ -1,9 +1,9 @@
 # .github/workflows/main.yml
-# TP2 - Intégration continue : tests du backend et analyse qualité SonarCloud
+# TP2 - CI/CD : tests du backend, analyse SonarCloud, puis build et publication des images
 name: CI - Test backend
 
 on:
-  # Lance les tests à chaque push sur main et develop
+  # Lance le pipeline à chaque push sur main et develop
   push:
     branches:
       - main
@@ -44,3 +44,49 @@ jobs:
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
           --file ./simple-api/pom.xml
+
+  build-and-push-docker-image:
+    # Ne se lance que si le job test-backend a réussi
+    needs: test-backend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Connexion à Docker Hub avec les secrets du repo
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Construit et publie l'image du backend (publication uniquement sur main)
+      - name: Build image and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./simple-api
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Construit et publie l'image de la base de données
+      - name: Build image and push database
+        uses: docker/build-push-action@v6
+        with:
+          context: ./database
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Construit et publie l'image du serveur Apache
+      - name: Build image and push httpd
+        uses: docker/build-push-action@v6
+        with:
+          context: ./http-server
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+      # Construit et publie l'image du front
+      - name: Build image and push front
+        uses: docker/build-push-action@v6
+        with:
+          context: ./front
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
