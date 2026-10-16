@@ -1,5 +1,5 @@
-# .github/workflows/ci.yml
-# TP2 - Intégration continue : tests du backend
+# .github/workflows/main.yml
+# TP2 - Intégration continue : tests du backend et analyse qualité SonarCloud
 name: CI - Test backend
 
 on:
@@ -16,8 +16,11 @@ jobs:
     # Machine virtuelle Ubuntu fournie par GitHub
     runs-on: ubuntu-24.04
     steps:
-      # Récupère le code du repo
+      # Récupère le code du repo, avec tout l'historique Git
+      # (SonarCloud s'en sert pour attribuer les problèmes aux commits)
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Installe le JDK 21 (même version que le pom.xml)
       - name: Set up JDK 21
@@ -30,3 +33,14 @@ jobs:
       # Compile, lance les tests unitaires et les tests d'intégration (Testcontainers)
       - name: Build and test with Maven
         run: mvn clean verify --file ./simple-api/pom.xml
+
+      # Analyse la qualité du code avec SonarCloud (Quality Gate)
+      # Le token est lu depuis le secret SONAR_TOKEN pour ne pas l'écrire en clair
+      - name: SonarCloud analysis
+        run: >
+          mvn -B verify sonar:sonar
+          -Dsonar.projectKey=EneFixx_tp-devops-correction-docker
+          -Dsonar.organization=enefixx
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          --file ./simple-api/pom.xml
