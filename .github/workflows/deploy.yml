@@ -1,24 +1,17 @@
-
+# .github/workflows/deploy.yml
+# TP3 - Déploiement sur le serveur avec Ansible
+# Désactivé automatiquement pour le TP2 : se lance uniquement à la main depuis l'onglet Actions
 name: Deploy - Ansible (TP3)
 
 on:
-  # Se lance quand les images ont été publiées sur Docker Hub
-  workflow_run:
-    workflows: ["CD - Build and push images"]
-    types: [completed]
-    branches: [main]
-  # Permet aussi de lancer le déploiement à la main depuis l'onglet Actions
+  # Déploiement manuel uniquement (bouton "Run workflow" dans l'onglet Actions)
   workflow_dispatch:
 
 jobs:
   deploy:
-    # Ne déploie que si la publication des images a réussi (ou si lancé à la main)
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       # Installe Python puis Ansible sur la machine de GitHub
       - uses: actions/setup-python@v5
