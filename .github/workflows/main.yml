@@ -1,12 +1,14 @@
-name: CI devops 2025
+# .github/workflows/ci.yml
+# TP2 - Intégration continue : tests du backend
+name: CI - Test backend
 
 on:
-  # Lance la CI a chaque push sur main et develop
+  # Lance les tests à chaque push sur main et develop
   push:
     branches:
       - main
       - develop
-  # Et a chaque pull request
+  # Et à chaque pull request
   pull_request:
 
 jobs:
@@ -14,10 +16,10 @@ jobs:
     # Machine virtuelle Ubuntu fournie par GitHub
     runs-on: ubuntu-24.04
     steps:
-      # Recupere le code du repo dans la machine
+      # Récupère le code du repo
       - uses: actions/checkout@v4
 
-      # Installe le JDK 21 (meme version que le pom.xml)
+      # Installe le JDK 21 (même version que le pom.xml)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -25,82 +27,6 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # Compile, lance les tests unitaires et les tests d'integration
+      # Compile, lance les tests unitaires et les tests d'intégration (Testcontainers)
       - name: Build and test with Maven
         run: mvn clean verify --file ./simple-api/pom.xml
-
-  build-and-push-docker-image:
-    # Ne se lance que si les tests du backend sont passes
-    needs: test-backend
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-
-      # Connexion a Docker Hub avec les secrets du repo
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Construit et publie l'image du backend
-      - name: Build image and push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./simple-api
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
-
-      # Construit et publie l'image de la base de donnees
-      - name: Build image and push database
-        uses: docker/build-push-action@v6
-        with:
-          context: ./database
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
-
-      # Construit et publie l'image du serveur Apache
-      - name: Build image and push httpd
-        uses: docker/build-push-action@v6
-        with:
-          context: ./http-server
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
-
-      # Construit et publie l'image du front
-      - name: Build image and push front
-        uses: docker/build-push-action@v6
-        with:
-          context: ./front
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
-
-  deploy:
-    # Ne se lance qu'apres la publication des images, et seulement sur main
-    needs: build-and-push-docker-image
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-
-      # Installe Python puis Ansible sur la machine de GitHub
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Ansible
-        run: pip install ansible
-
-      # Recree la cle SSH a partir du secret
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      # Lance le playbook sur le serveur
-      - name: Run Ansible playbook
-        working-directory: ./ansible
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
-        run: ansible-playbook -i inventories/setup.yml playbook.yml -e ansible_ssh_private_key_file=$HOME/.ssh/id_rsa
